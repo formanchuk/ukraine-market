@@ -1,10 +1,17 @@
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+import os
 import logging
+from flask import Flask, request
+from telegram import Bot, Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
+from telegram.ext import Dispatcher, CommandHandler
 
-TOKEN = "8935619238:AAG4rSiSWEsNM0NlX0fDivsZ6mWlhEN5ukg"
+TOKEN = os.environ.get("BOT_TOKEN", "8935619238:AAG4rSiSWEsNM0NlX0fDivsZ6mWlhEN5ukg")
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+# ========== Flask-додаток ==========
+app = Flask(__name__)
+bot = Bot(token=TOKEN)
+dispatcher = Dispatcher(bot, None, use_context=True)
 
 # ========== КЛАВІАТУРА ==========
 def main_menu():
@@ -14,7 +21,7 @@ def main_menu():
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 # ========== ОБРОБНИКИ ==========
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(update: Update, context):
     user = update.effective_user
     await update.message.reply_text(
         f"🇺🇦 Вітаю, {user.first_name}!\n\n"
@@ -30,26 +37,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         disable_web_page_preview=True
     )
 
-async def web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обробка даних з Web App (якщо потрібно)"""
+async def web_app_data(update: Update, context):
     data = update.message.web_app_data
     if data:
         await update.message.reply_text(f"Отримано дані: {data.data}")
 
-# ========== ЗАПУСК ==========
-def main():
-    app = Application.builder().token(TOKEN).build()
-    
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_data))
-    
-    print("🚀 Ukraine Market Bot запущено!")
-    print("✅ Єдина кнопка: Відкрити Ukraine Market")
-    print("✅ Посилання: https://formanchuk.github.io/ukraine-market-app/")
-    print("✅ Канал: https://t.me/Markets_Ukraine")
-    print("✅ Група: https://t.me/MartekUA")
-    
-    app.run_polling()
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("web_app_data", web_app_data))
 
-if __name__ == "__main__":
-    main()
+# ========== ВЕБХУК ==========
+@app.route(f'/webhook/{TOKEN}', methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return 'ok'
+
+@app.route('/')
+def index():
+    return "Ukraine Market Bot is running!"
+
+# ========== ЗАПУСК ==========
+if __name__ == '__main__':
+    app.run()
