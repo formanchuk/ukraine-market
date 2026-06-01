@@ -26,24 +26,12 @@ async def start(update: Update, context):
     await update.message.reply_text(
         f"🇺🇦 Вітаю, {user.first_name}!\n\n"
         f"**Ukraine Market** — ваш маркетплейс в Telegram\n\n"
-        f"📦 Тут ви можете купувати та продавати товари\n"
-        f"💼 Шукати роботу або працівників\n\n"
-        f"📢 **Наші спільноти:**\n"
-        f"• Канал з VIP оголошеннями: [Markets Ukraine](https://t.me/Markets_Ukraine)\n"
-        f"• Група для відкритого спілкування: [MartekUA](https://t.me/MartekUA)\n\n"
         f"👇 Натисніть кнопку нижче, щоб відкрити магазин",
         parse_mode="Markdown",
-        reply_markup=main_menu(),
-        disable_web_page_preview=True
+        reply_markup=main_menu()
     )
 
-async def web_app_data(update: Update, context):
-    data = update.message.web_app_data
-    if data:
-        await update.message.reply_text(f"Отримано дані: {data.data}")
-
 dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_handler(CommandHandler("web_app_data", web_app_data))
 
 # ========== ВЕБХУК ==========
 @app.route(f'/webhook/{TOKEN}', methods=['POST'])
@@ -56,6 +44,5 @@ def webhook():
 def index():
     return "Ukraine Market Bot is running!"
 
-# ========== ЗАПУСК ==========
 if __name__ == '__main__':
     app.run()
